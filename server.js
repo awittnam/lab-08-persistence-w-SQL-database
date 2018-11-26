@@ -70,16 +70,17 @@ function Movie(query) {
   this.overview = query.overview;
 }
 
-function Trails(query) {
-  this.name = query.name;
-  this.location = query.location;
-  this.length = query.length;
-  this.condition_date = query.condition_date;
-  this.condition_time = query.condition_time;
-  this.conditions = query.conditions;
-  this.stars = query.stars;
-  this.star_votes = query.star_votes;
-  this.summary = query.summary;
+function Trails(trail) {
+  this.trail_url = trail.url;
+  this.name = trail.name;
+  this.location = trail.location;
+  this.length = trail.length;
+  this.condition_date = trail.conditionDate;
+  this.condition_time = trail.conditionTime;
+  this.conditions = trail.conditions;
+  this.stars = trail.stars;
+  this.star_votes = trail.starVotes;
+  this.summary = trail.summary;
 }
 
 // Helper Functions
@@ -134,9 +135,15 @@ function getMovies(query,response) {
     .catch(error => handleError(error, response));
 }
 
-function getTrails(query, response {
-  const trailUrl = `https://www.hikingproject.com/data/get-trails?${request.query.data.latitude}=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
+function getTrails(request, response) {
+  const trailsUrl = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&key=${process.env.HIKING_API_KEY}`;
 
-  superagent.get(trailUrl)
-
-})
+  superagent.get(trailsUrl) 
+    .then(resultFromSuper => {
+      const trailListings = resultFromSuper.body.trails.map(trail => {
+        return new Trails(trail);
+      });
+      response.send(trailListings);
+    })
+    .catch(error => handleError(error, response));
+  }
