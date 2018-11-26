@@ -27,6 +27,8 @@ app.get('/yelp', getYelp);
 
 app.get('/movies', getMovies);
 
+app.get('/trails', getTrails)
+
 // Make sure the server is listening for requests
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
@@ -66,6 +68,18 @@ function Movie(query) {
   this.popularity = query.popularity;
   this.image_url = ('http://image.tmdb.org/t/p/w185/'+query.poster_path);
   this.overview = query.overview;
+}
+
+function Trails(query) {
+  this.name = query.name;
+  this.location = query.location;
+  this.length = query.length;
+  this.condition_date = query.condition_date;
+  this.condition_time = query.condition_time;
+  this.conditions = query.conditions;
+  this.stars = query.stars;
+  this.star_votes = query.star_votes;
+  this.summary = query.summary;
 }
 
 // Helper Functions
@@ -119,3 +133,10 @@ function getMovies(query,response) {
     })
     .catch(error => handleError(error, response));
 }
+
+function getTrails(query, response {
+  const trailUrl = `https://www.hikingproject.com/data/get-trails?${request.query.data.latitude}=${request.query.data.longitude}&maxDistance=10&key=${process.env.HIKING_API_KEY}`;
+
+  superagent.get(trailUrl)
+
+})
