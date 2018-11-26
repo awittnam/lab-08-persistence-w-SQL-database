@@ -27,7 +27,9 @@ app.get('/yelp', getYelp);
 
 app.get('/movies', getMovies);
 
-app.get('/trails', getTrails)
+app.get('/meetups', getMeetup);
+
+app.get('/trails', getTrails);
 
 // Make sure the server is listening for requests
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
@@ -69,6 +71,13 @@ function Movie(query) {
   this.image_url = ('http://image.tmdb.org/t/p/w185/'+query.poster_path);
   this.overview = query.overview;
 }
+
+function Meetup(meetup) {
+  this.link = meetup.link;
+  this.name = meetup.name;
+  this.host = meetup.host;
+  this.creation_date = new Date(meetup.created).toString().slice(0,15);
+  }
 
 function Trails(trail) {
   this.trail_url = trail.url;
@@ -113,7 +122,6 @@ function getYelp(req, res){
   superagent.get(yelpUrl)
     .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
     .then(yelpResult => {
-      console.log('yelpResult', yelpResult.body.businesses[0]);
       const yelpSummaries = yelpResult.body.businesses.map(place => {
         return new Food(place);
       });
@@ -133,6 +141,19 @@ function getMovies(query,response) {
       response.send(movieSummaries);
     })
     .catch(error => handleError(error, response));
+}
+
+function getMeetup(request, response) {
+  const url = `http://api.meetup.com/find/upcoming_events?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&key=${process.env.MEETUP_API_KEY}`;
+
+  superagent.get(url)
+  .then(result => {
+    const meetupListings = result.body.events.map( meet => {
+      return new Meetup(meet);
+    });
+    response.send(meetupListings);
+  })
+  .catch(error => handleError(error, response));
 }
 
 function getTrails(request, response) {
