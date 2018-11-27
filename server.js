@@ -27,6 +27,10 @@ app.get('/yelp', getYelp);
 
 app.get('/movies', getMovies);
 
+app.get('/meetups', getMeetup);
+
+app.get('/trails', getTrails);
+
 // Make sure the server is listening for requests
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 
@@ -68,6 +72,26 @@ function Movie(query) {
   this.overview = query.overview;
 }
 
+function Meetup(meetup) {
+  this.link = meetup.link;
+  this.name = meetup.name;
+  this.host = meetup.host;
+  this.creation_date = new Date(meetup.created).toString().slice(0,15);
+  }
+
+function Trails(trail) {
+  this.trail_url = trail.url;
+  this.name = trail.name;
+  this.location = trail.location;
+  this.length = trail.length;
+  this.condition_date = trail.conditionDate;
+  this.condition_time = trail.conditionTime;
+  this.conditions = trail.conditions;
+  this.stars = trail.stars;
+  this.star_votes = trail.starVotes;
+  this.summary = trail.summary;
+}
+
 // Helper Functions
 function searchToLatLong(query) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GEOCODE_API_KEY}`;
@@ -98,7 +122,6 @@ function getYelp(req, res){
   superagent.get(yelpUrl)
     .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
     .then(yelpResult => {
-      console.log('yelpResult', yelpResult.body.businesses[0]);
       const yelpSummaries = yelpResult.body.businesses.map(place => {
         return new Food(place);
       });
@@ -119,3 +142,29 @@ function getMovies(query,response) {
     })
     .catch(error => handleError(error, response));
 }
+
+function getMeetup(request, response) {
+  const url = `http://api.meetup.com/find/upcoming_events?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&key=${process.env.MEETUP_API_KEY}`;
+
+  superagent.get(url)
+  .then(result => {
+    const meetupListings = result.body.events.map( meet => {
+      return new Meetup(meet);
+    });
+    response.send(meetupListings);
+  })
+  .catch(error => handleError(error, response));
+}
+
+function getTrails(request, response) {
+  const trailsUrl = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&key=${process.env.HIKING_API_KEY}`;
+
+  superagent.get(trailsUrl) 
+    .then(resultFromSuper => {
+      const trailListings = resultFromSuper.body.trails.map(trail => {
+        return new Trails(trail);
+      });
+      response.send(trailListings);
+    })
+    .catch(error => handleError(error, response));
+  }
