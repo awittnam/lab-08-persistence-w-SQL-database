@@ -167,18 +167,18 @@ function deleteByLocationId(table, city) {
 //     .catch(error => handleError(error));
 // }
 
-function getWeather(request, response) {
-  const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+// function getWeather(request, response) {
+//   const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
 
-  superagent.get(url)
-    .then(result => {
-      const weatherSummaries = result.body.daily.data.map(day => {
-        return new Weather(day);
-      });
-      response.send(weatherSummaries);
-    })
-    .catch(error => handleError(error, response));
-}
+//   superagent.get(url)
+//     .then(result => {
+//       const weatherSummaries = result.body.daily.data.map(day => {
+//         return new Weather(day);
+//       });
+//       response.send(weatherSummaries);
+//     })
+//     .catch(error => handleError(error, response));
+// }
 
 function getYelp(req, res){
   const yelpUrl = `https://api.yelp.com/v3/businesses/search?latitude=${req.query.data.latitude}&longitude=${req.query.data.longitude}`;
@@ -267,3 +267,36 @@ function getLocation(request, response) {
   })
 }
 
+//+++++++++++++++++++++++++++++++Weather Handler+++++++++++++++++++++++++
+function getWeather(request, response) {
+  Weather.lookup({
+    tableName: Weather.tableName,
+
+    location: request.query.data.id,
+
+    cacheHit: function (result) {
+      let ageOfResultsInMinutes = (Date.now() - result.rows[0].created_at) / (1000 * 60);
+      if (ageOfResultsInMinutes > 30) {
+        Weather.deleteByLocationId(Weather.tableName, request.query.data.id);
+        this.cacheMiss();
+      } else {
+        response.send(result.rows);
+      }
+    },
+
+    cacheMiss: function () {
+      const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+
+      return superagent.get(url)
+        .then(result => {
+          const weatherSummaries = result.body.daily.data.map(day => {
+            const summary = new Weather(day);
+            summary.save(request.query.data.id);
+            return summary;
+          });
+          response.send(weatherSummaries);
+        })
+        .catch(error => handleError(error, response));
+    }
+  })
+}
